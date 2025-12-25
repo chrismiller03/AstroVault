@@ -1,110 +1,151 @@
-# FHEVM Hardhat Template
+# AstroVault
 
-A Hardhat-based template for developing Fully Homomorphic Encryption (FHE) enabled Solidity smart contracts using the
-FHEVM protocol by Zama.
+AstroVault is a privacy-preserving fundraising dApp built on Zama FHEVM. It lets a creator launch one encrypted
+fundraising campaign at a time, accept confidential cUSDT contributions, and withdraw the pooled funds on demand.
+Contribution amounts stay encrypted on-chain while still enabling correct totals and accounting.
 
-## Quick Start
+## Project Overview
 
-For detailed instructions see:
-[FHEVM Hardhat Quick Start Tutorial](https://docs.zama.ai/protocol/solidity-guides/getting-started/quick-start-tutorial)
+AstroVault focuses on a common pain point in fundraising: contributors want their amounts to remain private, but the
+campaign owner still needs a trustworthy, on-chain tally of total funds. By combining Zama Fully Homomorphic Encryption
+(FHE) with a cUSDT token, AstroVault allows encrypted contributions and encrypted totals without leaking individual
+amounts to the public.
 
-### Prerequisites
+Key properties:
+- One active campaign at a time for operational simplicity and clear auditability.
+- Encrypted per-contributor balances that can be summed without decryption.
+- Owner-controlled finalization that pulls the entire encrypted pool to the creator.
+- On-chain state remains minimal while privacy is preserved end to end.
 
-- **Node.js**: Version 20 or higher
-- **npm or yarn/pnpm**: Package manager
+## Problems Solved
 
-### Installation
+1) Privacy of contribution amounts.
+   - Traditional crowdfunding exposes amounts and donors. AstroVault keeps amounts encrypted on-chain.
+2) Trust in totals without disclosure.
+   - FHE enables summing encrypted contributions so the total raised is correct without revealing inputs.
+3) Frictionless withdrawals.
+   - The creator can end the campaign at any time and collect the full pool of cUSDT.
+4) Transparent workflow without surveillance.
+   - Campaign metadata (name, deadline, ownership) is public, but financial details remain confidential.
 
-1. **Install dependencies**
+## Advantages
 
-   ```bash
-   npm install
-   ```
+- Confidential by design: encrypted amounts are stored and aggregated on-chain.
+- Accurate totals: FHE operations ensure correct sums while staying private.
+- Clear ownership: only the campaign owner can finalize and withdraw.
+- Minimal surface area: a small contract set with straightforward flows.
+- Deterministic behavior: one active campaign simplifies UX, indexing, and auditing.
 
-2. **Set up environment variables**
+## Feature Set
 
-   ```bash
-   npx hardhat vars set MNEMONIC
+- Create a campaign with name, target amount, and end time.
+- Contribute with encrypted cUSDT using Zama input proofs.
+- Track encrypted per-contributor amounts and encrypted total raised.
+- Finalize at any time to transfer the entire pool to the owner.
+- Read-only public metadata: owner, name, deadline, finalized state.
 
-   # Set your Infura API key for network access
-   npx hardhat vars set INFURA_API_KEY
+## How It Works
 
-   # Optional: Set Etherscan API key for contract verification
-   npx hardhat vars set ETHERSCAN_API_KEY
-   ```
+1) The creator calls `createCampaign` with a name, target amount, and deadline.
+2) Contributors encrypt their desired amount in the frontend and call `contribute`.
+3) The contract pulls encrypted cUSDT and adds it to the encrypted totals.
+4) The creator calls `finalizeCampaign` to transfer the entire encrypted balance.
+5) Off-chain FHE tooling allows authorized users to decrypt their own numbers.
 
-3. **Compile and test**
+## Technology Stack
 
-   ```bash
-   npm run compile
-   npm run test
-   ```
+Smart contracts:
+- Solidity with Hardhat.
+- Zama FHEVM libraries for encrypted integers and proofs.
+- cUSDT implemented as a confidential ERC7984 token.
 
-4. **Deploy to local network**
+Frontend:
+- React + Vite.
+- viem for read-only calls.
+- ethers for write transactions.
+- RainbowKit for wallet connection.
+- No Tailwind CSS.
 
-   ```bash
-   # Start a local FHEVM-ready node
-   npx hardhat node
-   # Deploy to local network
-   npx hardhat deploy --network localhost
-   ```
+Tooling:
+- npm for package management.
+- Hardhat tasks for operational scripts.
+- Hardhat tests for contract validation.
 
-5. **Deploy to Sepolia Testnet**
+## Contract Layout
 
-   ```bash
-   # Deploy to Sepolia
-   npx hardhat deploy --network sepolia
-   # Verify contract on Etherscan
-   npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
-   ```
+- `contracts/AstroVaultFundraise.sol`
+  - Primary fundraising logic, encrypted totals, and finalize flow.
+  - Supports a single active campaign at a time.
+- `contracts/ConfidentialUSDT.sol`
+  - Confidential ERC7984 token used for encrypted transfers.
+- `contracts/FHECounter.sol`
+  - Example FHE contract used for reference and testing.
 
-6. **Test on Sepolia Testnet**
+## Frontend Notes
 
-   ```bash
-   # Once deployed, you can run a simple test on Sepolia.
-   npx hardhat test --network sepolia
-   ```
+- ABIs are sourced from `deployments/sepolia` after compilation and deployment.
+- Reads use viem, writes use ethers.
+- No environment variables are used in the frontend; configuration is in code.
+- No localhost network is used in the frontend configuration.
+- The frontend connects to deployed contracts and uses live on-chain data only.
 
-## 📁 Project Structure
+## Development and Deployment Workflow
+
+1) Install dependencies:
+   - `npm install`
+2) Compile and run tests:
+   - `npm run compile`
+   - `npm run test`
+3) Deploy to a local node for validation:
+   - `npx hardhat node`
+   - `npx hardhat deploy --network <local-network-name>`
+4) Deploy to Sepolia:
+   - Configure `.env` with `INFURA_API_KEY` and `PRIVATE_KEY`.
+   - `npx hardhat deploy --network sepolia`
+
+Deployment uses a private key only; mnemonic-based deployment is intentionally not supported.
+
+## Security and Privacy Model
+
+- Confidentiality:
+  - Contribution amounts are encrypted as FHE euint64 values.
+  - Totals and per-user balances remain encrypted on-chain.
+- Access control:
+  - Only the campaign owner can finalize and withdraw.
+  - Contributors can only affect their own contribution amounts.
+- Integrity:
+  - Encrypted arithmetic preserves correct totals even without decryption.
+
+## Limitations and Current Scope
+
+- Single active campaign at a time (by design in the contract).
+- Finalization is manual and owner-triggered.
+- Refunds are not implemented yet.
+- Contribution values are limited to 64-bit encrypted integers.
+
+## Future Roadmap
+
+- Multi-campaign support with independent lifecycles.
+- Automated finalization on deadline with optional grace periods.
+- Encrypted refund flow for unsuccessful campaigns.
+- Milestone-based partial withdrawals with encrypted accounting.
+- Campaign discovery and rich metadata indexing.
+- Role-based access for team-managed campaigns.
+- Cross-chain fundraising with encrypted bridging.
+
+## Repository Structure
 
 ```
-fhevm-hardhat-template/
-├── contracts/           # Smart contract source files
-│   └── FHECounter.sol   # Example FHE counter contract
-├── deploy/              # Deployment scripts
-├── tasks/               # Hardhat custom tasks
-├── test/                # Test files
-├── hardhat.config.ts    # Hardhat configuration
-└── package.json         # Dependencies and scripts
+AstroVault/
+├── contracts/              # Smart contracts
+├── deploy/                 # Deployment scripts
+├── deployments/            # Deployed artifacts and ABIs
+├── tasks/                  # Hardhat tasks
+├── test/                   # Contract tests
+├── frontend/               # React + Vite frontend
+└── docs/                   # Additional documentation
 ```
 
-## 📜 Available Scripts
+## License
 
-| Script             | Description              |
-| ------------------ | ------------------------ |
-| `npm run compile`  | Compile all contracts    |
-| `npm run test`     | Run all tests            |
-| `npm run coverage` | Generate coverage report |
-| `npm run lint`     | Run linting checks       |
-| `npm run clean`    | Clean build artifacts    |
-
-## 📚 Documentation
-
-- [FHEVM Documentation](https://docs.zama.ai/fhevm)
-- [FHEVM Hardhat Setup Guide](https://docs.zama.ai/protocol/solidity-guides/getting-started/setup)
-- [FHEVM Testing Guide](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat/write_test)
-- [FHEVM Hardhat Plugin](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat)
-
-## 📄 License
-
-This project is licensed under the BSD-3-Clause-Clear License. See the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/zama-ai/fhevm/issues)
-- **Documentation**: [FHEVM Docs](https://docs.zama.ai)
-- **Community**: [Zama Discord](https://discord.gg/zama)
-
----
-
-**Built with ❤️ by the Zama team**
+BSD-3-Clause-Clear. See `LICENSE` for details.
