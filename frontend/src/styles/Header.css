@@ -1,0 +1,51 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  backdrop-filter: blur(8px);
+  background: rgba(13, 16, 30, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 18px 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.network-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cdd7ff;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
